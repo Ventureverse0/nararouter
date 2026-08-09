@@ -1,0 +1,74 @@
+{
+  "name": "omniroute-desktop",
+  "productName": "OmniRoute Desktop",
+  "version": "1.0.0",
+  "description": "Tray-only desktop app that runs the OmniRoute AI router (http://localhost:20128) in the background. Self-contained: bundles the Omniroute server and its own Node runtime. No API keys are shipped - each user configures their own on first run.",
+  "author": "OmniRoute Desktop",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "icon": "python scripts/make_icon.py",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "omniroute": "3.8.49"
+  },
+  "devDependencies": {
+    "electron": "^43.3.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.omniroute.desktop",
+    "productName": "OmniRoute Desktop",
+    "asar": false,
+    "asarUnpack": [],
+    "nodeGypRebuild": false,
+    "npmRebuild": false,
+    "files": [
+      "main.js",
+      "package.json",
+      "assets/**/*",
+      "node_modules/omniroute/dist/**/*",
+      "node_modules/omniroute/dist/node_modules/**/*",
+      "node_modules/better-sqlite3/**/*",
+      "node_modules/@parcel/watcher-win32-x64/**/*",
+      "node_modules/@swc/**/*",
+      "node_modules/@img/**/*",
+      "node_modules/keytar/**/*",
+      "node_modules/sqlite-vec-windows-x64/**/*",
+      "node_modules/tls-client-node/**/*",
+      "node_modules/wreq-js/**/*",
+      "node_modules/koffi/**/*",
+      "node_modules/onnxruntime-node/**/*",
+      "node_modules/@ngrok/**/*",
+      "node_modules/@esbuild/**/*",
+      "!**/*.map",
+      "!**/.env",
+      "!**/.env.*"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "OmniRoute Desktop"
+    }
+  }
+}
