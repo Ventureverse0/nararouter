@@ -50,13 +50,13 @@ Nararouter is a desktop application that wraps the [OmniRoute](https://github.co
 
 ### Option 1: Portable (Recommended for Testing)
 
-1. Download the portable zip from releases
+1. Download `Nararouter-portable.tar.gz` from releases
 2. Extract anywhere
-3. Double-click `Nararouter.exe`
+3. Double-click `Nararouter.exe` (inside `win-unpacked/` folder)
 
 ### Option 2: Installer (Per-User, No Admin Required)
 
-1. Download `Nararouter-Setup-1.0.0.exe`
+1. Download `Nararouter Setup 1.0.0.exe` (NSIS installer)
 2. Run it — no admin rights needed
 3. App appears in Start Menu + Desktop shortcut
 4. Minimizes to tray, stays running in background
@@ -225,8 +225,8 @@ MIT — same as OmniRoute.
 ## Direct Installer Link
 
 **Download Nararouter Installer:**
-- **Portable**: [Nararouter-1.0.0.zip](https://github.com/Ventureverse0/nararouter/releases/latest)
-- **Installer**: [Nararouter-Setup-1.0.0.exe](https://github.com/Ventureverse0/nararouter/releases/latest)
+- **Portable**: [Nararouter-portable.tar.gz](https://github.com/Ventureverse0/nararouter/releases/latest) (285 MB)
+- **Installer**: [Nararouter Setup 1.0.0.exe](https://github.com/Ventureverse0/nararouter/releases/latest) (494 MB, NSIS installer)
 
 ---
 
