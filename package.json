@@ -24,6 +24,7 @@
     "productName": "Nararouter",
     "asar": false,
     "asarUnpack": [],
+    "afterPack": "scripts/afterPack.cjs",
     "nodeGypRebuild": false,
     "npmRebuild": false,
     "files": [
