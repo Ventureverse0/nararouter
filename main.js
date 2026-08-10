@@ -1,12 +1,12 @@
 'use strict';
 // OmniRoute Desktop - sidebar app with native title bar
 //
-// Embeds the OmniRoute dashboard in a narrow sidebar window.
+// Always owns the port: if something else is listening, kill it and start our own.
 // Minimizes to tray (not taskbar) — app keeps running in background.
 // Uses native Windows title bar for reliability.
 
 const { app, BrowserWindow, Tray, Menu, nativeImage, shell, dialog } = require('electron');
-const { spawn, execFile } = require('node:child_process');
+const { spawn, execFile, execSync } = require('node:child_process');
 const net = require('node:net');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -47,7 +47,6 @@ const PID_FILE = path.join(DATA_DIR, 'server', '.pid');
 let mainWindow = null;
 let tray = null;
 let serverChild = null;
-let external = false;
 let ready = false;
 let quitting = false;
 let restarts = 0;
@@ -61,6 +60,7 @@ function log(msg) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// Check if a TCP port is listening on localhost
 function portInUse(port) {
   return new Promise(resolve => {
     const sock = net.connect({ port, host: '127.0.0.1' });
@@ -69,6 +69,51 @@ function portInUse(port) {
     sock.once('timeout', () => { sock.destroy(); resolve(false); });
     sock.once('error', () => resolve(false));
   });
+}
+
+// Find PID listening on a port (Windows) via netstat
+function getPidOnPort(port) {
+  try {
+    const out = execSync(
+      `netstat -ano 2>nul | findstr :${port} | findstr LISTENING`,
+      { encoding: 'utf8', shell: 'cmd.exe', windowsHide: true }
+    );
+    const lines = out.trim().split('\n');
+    for (const line of lines) {
+      const parts = line.trim().split(/\s+/);
+      // Format: Proto Local Address Foreign Address State PID
+      // Local Address looks like 0.0.0.0:20128 or [::]:20128
+      const pid = parts[parts.length - 1];
+      if (pid && /^\d+$/.test(pid)) {
+        return parseInt(pid, 10);
+      }
+    }
+  } catch (e) { /* no output = no listener */ }
+  return null;
+}
+
+// Kill whatever process is using the port, then verify it's gone
+async function reclaimPort(port, maxWaitMs = 5000) {
+  const pid = getPidOnPort(port);
+  if (!pid) return;
+
+  log(`port ${port} in use by PID ${pid}, killing...`);
+  try {
+    execFileSync('taskkill', ['/F', '/PID', String(pid), '/T'], { windowsHide: true });
+  } catch (e) {
+    log(`kill command failed for PID ${pid}: ${e.message}`);
+  }
+
+  // Wait until port is free
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    if (!(await portInUse(port))) {
+      log(`port ${port} is now free`);
+      return;
+    }
+    await sleep(200);
+  }
+  log(`WARNING: port ${port} still in use after kill attempt`);
 }
 
 function globalPkgEnvPath() {
@@ -115,7 +160,7 @@ function loadEnvFiles() {
         if (eq <= 0) continue;
         const key = t.slice(0, eq).trim();
         if (process.env[key] === undefined) {
-          process.env[key] = t.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
+          process.env[key] = t.slice(eq + 1).trim().replace(/^[\"']|[\"']$/g, '');
         }
       }
       log('loaded env: ' + envPath);
@@ -138,7 +183,7 @@ function startServer() {
     : path.join(pkgDir, 'dist', 'server.js');
   if (!fs.existsSync(serverJs)) {
     log('FATAL: server bundle not found at ' + serverJs);
-    dialog.showErrorBox('OmniRoute Desktop', 'The bundled OmniRoute server is missing. Please reinstall the app.');
+    dialog.showErrorBox('Nararouter', 'The bundled server is missing. Please reinstall the app.');
     app.exit(1);
     return;
   }
@@ -200,14 +245,13 @@ async function waitForReady(timeoutMs) {
 }
 
 function restartServer() {
-  if (external) return;
   if (serverChild) {
     restarts = 0;
     const old = serverChild;
     serverChild = null;
     log('manual restart requested');
     try { old.kill(); } catch (e) { /* ignore */ }
-    setTimeout(() => { if (!quitting && !external) startServer(); }, 2000);
+    setTimeout(() => { if (!quitting) startServer(); }, 2000);
   } else {
     startServer();
   }
@@ -318,20 +362,19 @@ app.whenReady().then(async () => {
   fs.mkdirSync(LOG_DIR, { recursive: true });
   loadEnvFiles();
 
+  // Always own the port: kill anything else using it, then start our own server
   const busy = await portInUse(PORT);
   if (busy) {
-    external = true;
+    log('port ' + PORT + ' already in use, reclaiming...');
+    await reclaimPort(PORT);
+  }
+  startServer();
+  const ok = await waitForReady(120000);
+  if (ok) {
     ready = true;
-    log('port ' + PORT + ' already in use -> external mode (existing server left untouched)');
+    log('server is ready');
   } else {
-    startServer();
-    const ok = await waitForReady(120000);
-    if (ok) {
-      ready = true;
-      log('server is ready');
-    } else {
-      log('server did not become ready within 120s');
-    }
+    log('server did not become ready within 120s');
   }
 
   createWindow();
