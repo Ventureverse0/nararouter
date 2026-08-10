@@ -1,9 +1,9 @@
 {
-  "name": "omniroute-desktop",
-  "productName": "OmniRoute Desktop",
+  "name": "nararouter",
+  "productName": "Nararouter",
   "version": "1.0.0",
-  "description": "Tray-only desktop app that runs the OmniRoute AI router (http://localhost:20128) in the background. Self-contained: bundles the Omniroute server and its own Node runtime. No API keys are shipped - each user configures their own on first run.",
-  "author": "OmniRoute Desktop",
+  "description": "Desktop sidebar app for the Nararouter AI router (based on OmniRoute) - embeds dashboard in a frameless window, minimizes to tray, no taskbar button.",
+  "author": "Nararouter Desktop",
   "license": "MIT",
   "main": "main.js",
   "scripts": {
@@ -20,8 +20,8 @@
     "electron-builder": "^26.15.3"
   },
   "build": {
-    "appId": "com.omniroute.desktop",
-    "productName": "OmniRoute Desktop",
+    "appId": "com.nararouter.desktop",
+    "productName": "Nararouter",
     "asar": false,
     "asarUnpack": [],
     "nodeGypRebuild": false,
@@ -29,6 +29,7 @@
     "files": [
       "main.js",
       "package.json",
+      "preload.js",
       "assets/**/*",
       "node_modules/omniroute/dist/**/*",
       "node_modules/omniroute/dist/node_modules/**/*",
@@ -68,7 +69,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "OmniRoute Desktop"
+      "shortcutName": "Nararouter Desktop"
     }
   }
 }

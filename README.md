@@ -1,81 +1,144 @@
-# OmniRoute Desktop
+# Nararouter
 
-Tray-only desktop app that runs the **OmniRoute AI router** (https://github.com/diegosouzapw/OmniRoute)
-in the background. No windows, no taskbar button - just an icon in the system
-tray (bottom-right, next to the clock). The router stays available at:
+**Desktop sidebar app for the Nararouter AI router** — embeds the OmniRoute dashboard in a narrow window, minimizes to system tray, no taskbar button.
 
-    http://localhost:20128   (OpenAI-compatible /v1 endpoint + dashboard)
+## Overview
 
-## Why this exists
+Nararouter is a desktop application that wraps the [OmniRoute](https://github.com/diegosouzapw/OmniRoute) AI router in a native Windows application. It provides:
 
-The normal way to run OmniRoute is `omniroute serve` in a terminal - which
-dies when you reboot and has to be started by hand. This app wraps the server
-in a small Electron shell that:
+- **Sidebar window** — 400px wide, docks to the left edge of your screen
+- **System tray** — minimizes to tray, no taskbar button
+- **Background server** — spawns the OmniRoute server automatically
+- **Privacy** — no API keys shipped; each user configures their own
+- **External mode** — if port 20128 is busy, leaves the existing server untouched
 
-- starts the server automatically (at login via the tray menu toggle, or any
-  scheduled task / shortcut)
-- keeps it alive in the background, restarting it if it crashes
-- gives you a tray menu: Open Dashboard / Restart Server / logs / Quit
-- is **self-contained** - the installer bundles the Omniroute server and its
-  own Node runtime. End users do NOT need Node.js, npm, or any CLI install.
+## What is OmniRoute?
 
-## Privacy / keys
+OmniRoute is a unified AI router with:
+- 290+ AI providers (90+ free tiers)
+- Auto-fallback across providers
+- RTK + Caveman compression (15–95% token savings)
+- OpenAI-compatible API at `/v1`
+- MCP tools, A2A, desktop, PWA support
 
-- **No API keys are shipped in the installer.** The app contains zero user
-  configuration. Each person who installs it opens the dashboard on first run
-  and adds their own providers / API keys.
-- Data lives in the per-user data dir:
-  - `%USERPROFILE%\.omniroute` (if it exists - matches the CLI's legacy dir)
-  - otherwise `%APPDATA%\omniroute`
-- If an existing global `omniroute` npm install is present on the machine,
-  its `.env` is read as a compatibility bridge so an existing install keeps
-  its dashboard password / secrets. That file stays on the machine - it is
-  never part of the app package.
-- If port `20128` is already in use when the app starts (e.g. an old
-  `omniroute serve` is still running), the app switches to **external mode**:
-  it shows the tray icon but does not touch the running server.
+**Original repo:** https://github.com/diegosouzapw/OmniRoute
 
-## Build the installer
+## How Nararouter enhances it
 
-Requirements: Node.js 20+ on the BUILD machine, internet access.
+The official OmniRoute provides `npm run electron:build` which builds the full Next.js app from source. Nararouter takes a different approach:
 
-    npm install
-    npm run icon        # regenerate icons (optional)
-    npm run dist        # produces dist/OmniRoute Desktop Setup 1.0.0.exe
+| Feature | OmniRoute (official) | Nararouter |
+|---------|---------------------|------------|
+| Build | Full Next.js app from source (heavy) | Thin wrapper around existing install (light) |
+| Dependencies | Requires toolchain, build tools | Self-contained, no toolchain needed |
+| UI | Full desktop app | Sidebar window, tray-only |
+| Config | Fresh install each time | Reuses existing `~/.omniroute` data |
+| Distribution | Per-machine build | Portable exe, portable installer |
 
-Installers are per-user NSIS builds (no admin rights needed to install).
-Run the .exe, pick a location, and OmniRoute Desktop appears in the tray.
+## Installation
 
-## Run from source (development)
+### Option 1: Portable (recommended for testing)
 
-    npm install
-    npm start
+1. Download the portable zip from the releases page
+2. Extract anywhere
+3. Double-click `Nararouter.exe`
 
-## Data & logs
+### Option 2: Installer (per-user, no admin)
 
-| What          | Where                                             |
-|---------------|---------------------------------------------------|
-| Server data   | `%USERPROFILE%\.omniroute` (or `%APPDATA%\omniroute`) |
-| App logs      | `<data dir>\logs\desktop-app.log`                 |
-| PID file      | `<data dir>\server\.pid` (keeps `omniroute stop` working) |
+1. Download `Nararouter-Setup-1.0.0.exe`
+2. Run it — no admin rights needed
+3. App appears in Start Menu + Desktop shortcut
+4. Minimize to tray, stays running in background
+
+### Option 3: Build from source
+
+```bash
+# Clone the repo
+git clone <repo-url>
+cd nararoute-desktop
+
+# Install dependencies
+npm install
+
+# Build portable version
+npx electron-builder --win portable --publish never
+
+# Or build installer
+npx electron-builder --win nsis --publish never
+```
+
+## Usage
+
+### First run
+1. Launch `Nararouter.exe`
+2. The sidebar window opens with the OmniRoute dashboard
+3. If port 20128 is busy, it detects "external mode" and leaves the existing server untouched
+4. If port 20128 is free, it spawns the server automatically
+
+### Managing the app
+- **Open dashboard**: Click the tray icon
+- **Minimize to tray**: Click the X button (window hides, app keeps running)
+- **Quit**: Right-click tray icon → Quit (stops server, closes app)
+- **Restart server**: Right-click tray icon → Restart Server
+- **Always on top**: Right-click tray icon → Always on Top (checkbox)
+
+### Data storage
+- **Config**: `%USERPROFILE%\.nararoute\` (or `%APPDATA%\nararoute` if legacy doesn't exist)
+- **Logs**: `%USERPROFILE%\.nararoute\logs\desktop-app.log`
+- **Server data**: `%USERPROFILE%\.omniroute\` (shared with CLI)
+
+### Environment loading
+Nararouter mirrors the OmniRoute CLI's env loading (first-wins):
+1. `<dataDir>/.env`
+2. `~/.env`
+3. Bundled package `.env` (if present)
+4. Global npm install `.env` (bridge for JWT_SECRET, INITIAL_PASSWORD)
+
+## Privacy & Keys
+
+- **No keys shipped**: The installer contains zero API keys
+- **Per-user config**: Each user sets up their own providers via the dashboard
+- **Local storage**: All config stays on the user's machine
+- **External mode**: If your existing OmniRoute instance is running, Nararouter leaves it untouched
 
 ## Troubleshooting
 
-- **Tray icon missing after install** - it hides in the overflow chevron;
-  drag it to the visible area. Also make sure the app is not blocked by
-  antivirus (first run may prompt).
-- **"Server: Running (external process)"** - something else already owns
-  port 20128. Stop that process (`omniroute stop` if it is the CLI, or quit
-  the other instance) then use tray -> Restart Server.
-- **Dashboard login changed** - the app reads the same env files as the CLI
-  (`<data dir>\.env`, `~\.env`, plus the global npm package `.env` if
-  present). If you previously ran from a custom working directory with a
-  local `.env`, place that file in `<data dir>\.env` (first-wins).
+### Build locks
+If the build fails with "Device or resource busy":
+```powershell
+# Kill all related processes
+Get-Process | Where-Object { $_.Path -like "*nararoute*" -or $_.Path -like "*electron*" } | Stop-Process -Force
+```
 
-## Layout
+### NSIS signing hangs
+If the NSIS installer hangs, use the portable target instead:
+```bash
+npx electron-builder --win portable --publish never
+```
 
-    main.js                 Electron main process (tray, spawn, lifecycle)
-    assets/icon.png         Tray / app icon
-    build/icon.ico          Installer icon
-    scripts/make_icon.py    Dependency-free icon generator (pure Python)
-    package.json            electron-builder config
+### Exe won't run
+Make sure you're running the exe from `dist/win-unpacked/`, not the project root:
+```
+E:\NovaEra Hub\useful projects\hermes-ecosystem\nararoute-desktop\dist\win-unpacked\Nararouter.exe
+```
+
+### Logs
+Check `C:\Users\<user>\.nararoute\logs\desktop-app.log` for startup logs.
+
+## Technical Details
+
+- **Electron**: v43.3.0 (bundled Node.js 24.18.1)
+- **Build tool**: electron-builder v26.15.3
+- **Runtime**: `ELECTRON_RUN_AS_NODE=1` (runs bundled Node, no system Node needed)
+- **Native modules**: All N-API prebuilts (better-sqlite3, @parcel/watcher, keytar, etc.)
+- **Build config**: `asar: false`, `npmRebuild: false` (no compiler needed)
+
+## License
+
+MIT — same as OmniRoute.
+
+## Credits
+
+- **OmniRoute**: [diegosouzapw/OmniRoute](https://github.com/diegosouzapw/OmniRoute)
+- **Electron**: [electron/electron](https://github.com/electron/electron)
+- **electron-builder**: [electron-userland/electron-builder](https://github.com/electron-userland/electron-builder)
