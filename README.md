@@ -225,8 +225,8 @@ MIT — same as OmniRoute.
 ## Direct Installer Link
 
 **Download Nararouter Installer:**
-- **Portable**: [Nararouter-1.0.0.zip](link-to-release)
-- **Installer**: [Nararouter-Setup-1.0.0.exe](link-to-release)
+- **Portable**: [Nararouter-1.0.0.zip](https://github.com/Ventureverse0/nararouter/releases/latest)
+- **Installer**: [Nararouter-Setup-1.0.0.exe](https://github.com/Ventureverse0/nararouter/releases/latest)
 
 ---
 
