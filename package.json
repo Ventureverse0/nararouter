@@ -27,9 +27,6 @@
     "afterPack": "scripts/afterPack.cjs",
     "nodeGypRebuild": false,
     "npmRebuild": false,
-    "win": {
-      "sign": null
-    },
     "files": [
       "main.js",
       "package.json",
@@ -56,6 +53,16 @@
     "directories": {
       "buildResources": "build",
       "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
