@@ -215,7 +215,7 @@ function startServer() {
       let buildOut = '';
       buildProc.stdout.on('data', d => { buildOut += d.toString(); });
       buildProc.stderr.on('data', d => { buildOut += d.toString(); });
-      await new Promise((resolve, reject) => {
+      new Promise((resolve, reject) => {
         buildProc.on('exit', (code) => {
           if (code === 0) resolve();
           else reject(new Error('next build failed with code ' + code + ': ' + buildOut.slice(-500)));
