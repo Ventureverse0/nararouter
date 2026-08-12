@@ -188,48 +188,6 @@ function startServer() {
     return;
   }
 
-  // Ensure Next.js build output exists (standalone mode needs .build/next)
-  const buildDir = path.join(pkgDir, '.build', 'next');
-  if (!fs.existsSync(buildDir)) {
-    log('Next.js build output missing at ' + buildDir + ', building now...');
-    const nextBin = path.join(pkgDir, 'node_modules', 'next', 'dist', 'bin', 'next');
-    const fallbackNext = path.join(APP_ROOT, 'node_modules', 'next', 'dist', 'bin', 'next');
-    const nextCli = fs.existsSync(nextBin) ? nextBin : (fs.existsSync(fallbackNext) ? fallbackNext : null);
-    if (!nextCli) {
-      log('FATAL: next binary not found, cannot build');
-      dialog.showErrorBox('Nararouter', 'Next.js build tool not found. Please reinstall the app.');
-      return;
-    }
-    try {
-      const buildEnv = Object.assign({}, process.env, {
-        NODE_ENV: 'production',
-        NEXT_TELEMETRY_DISABLED: '1',
-      });
-      const buildProc = spawn(process.execPath, [nextCli, 'build', '--cwd', pkgDir], {
-        cwd: pkgDir,
-        env: buildEnv,
-        stdio: ['ignore', 'pipe', 'pipe'],
-        windowsHide: true,
-        shell: false,
-      });
-      let buildOut = '';
-      buildProc.stdout.on('data', d => { buildOut += d.toString(); });
-      buildProc.stderr.on('data', d => { buildOut += d.toString(); });
-      new Promise((resolve, reject) => {
-        buildProc.on('exit', (code) => {
-          if (code === 0) resolve();
-          else reject(new Error('next build failed with code ' + code + ': ' + buildOut.slice(-500)));
-        });
-        buildProc.on('error', reject);
-      });
-      log('Next.js build completed successfully');
-    } catch (e) {
-      log('FATAL: Next.js build failed: ' + e.message);
-      dialog.showErrorBox('Nararouter', 'Failed to build dashboard. Check logs at ' + LOG_FILE);
-      return;
-    }
-  }
-
   // Kill previous server child if still running
   if (serverChild && !serverChild.killed) {
     try { serverChild.kill('SIGTERM'); } catch (e) { /* ignore */ }
