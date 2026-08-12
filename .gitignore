@@ -4,5 +4,6 @@ release/
 *.log
 .env
 .env.*
+*.exe
 .DS_Store
 Thumbs.db
