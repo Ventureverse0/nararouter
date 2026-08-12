@@ -230,6 +230,11 @@ function startServer() {
     }
   }
 
+  // Kill previous server child if still running
+  if (serverChild && !serverChild.killed) {
+    try { serverChild.kill('SIGTERM'); } catch (e) { /* ignore */ }
+  }
+
   const env = Object.assign({}, process.env, {
     OMNIROUTE_PORT: String(PORT),
     PORT: String(PORT),
