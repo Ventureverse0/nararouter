@@ -270,11 +270,10 @@ function stopServer(done) {
   const pid = child.pid;
   log('stopping managed server');
   try { child.kill(); } catch (e) { /* ignore */ }
-  setTimeout(() => {
-    try {
-      execFile('taskkill', ['/pid', String(pid), '/T', '/F'], { windowsHide: true }, () => done());
-    } catch (e) { done(); }
-  }, 2500);
+  try {
+    execFileSync('taskkill', ['/pid', String(pid), '/T', '/F'], { windowsHide: true });
+  } catch (e) { /* ignore */ }
+  setTimeout(() => done(), 500);
 }
 
 function createWindow() {
@@ -283,9 +282,10 @@ function createWindow() {
     height: 800,
     x: 0,
     y: 0,
-    frame: true,
+    show: false,
+    frame: true,  // native Windows title bar with minimize/maximize/close
     titleBarStyle: 'default',
-    skipTaskbar: true,
+    skipTaskbar: true,  // no taskbar button
     alwaysOnTop: false,
     webPreferences: {
       nodeIntegration: false,
@@ -311,16 +311,14 @@ function createWindow() {
     });
   };
 
-  if (ready) {
-    attemptLoad();
-  } else {
-    const checkReady = setInterval(() => {
-      if (ready && mainWindow) {
-        clearInterval(checkReady);
-        attemptLoad();
-      }
-    }, 500);
-  }
+  attemptLoad();
+
+  mainWindow.on('ready-to-show', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
