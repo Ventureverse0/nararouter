@@ -6,7 +6,7 @@
 // Uses native Windows title bar for reliability.
 
 const { app, BrowserWindow, Tray, Menu, nativeImage, shell, dialog } = require('electron');
-const { spawn, execFile, execSync } = require('node:child_process');
+const { spawn, execFile, execFileSync, execSync } = require('node:child_process');
 const net = require('node:net');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -283,9 +283,9 @@ function createWindow() {
     height: 800,
     x: 0,
     y: 0,
-    frame: true,  // native Windows title bar with minimize/maximize/close
+    frame: true,
     titleBarStyle: 'default',
-    skipTaskbar: true,  // no taskbar button
+    skipTaskbar: true,
     alwaysOnTop: false,
     webPreferences: {
       nodeIntegration: false,
@@ -294,7 +294,33 @@ function createWindow() {
     },
   });
 
-  mainWindow.loadURL('http://localhost:' + PORT);
+  // Only load dashboard after server is ready; retry on failure
+  const attemptLoad = (retries = 10, delay = 1000) => {
+    if (!mainWindow) return;
+    const url = 'http://localhost:' + PORT;
+    mainWindow.loadURL(url).catch(() => {});
+    mainWindow.webContents.on('did-fail-load', () => {
+      if (retries > 0) {
+        setTimeout(() => attemptLoad(retries - 1, delay), delay);
+      } else {
+        log('dashboard failed to load after retries: ' + url);
+      }
+    });
+    mainWindow.webContents.on('did-finish-load', () => {
+      log('dashboard loaded: ' + url);
+    });
+  };
+
+  if (ready) {
+    attemptLoad();
+  } else {
+    const checkReady = setInterval(() => {
+      if (ready && mainWindow) {
+        clearInterval(checkReady);
+        attemptLoad();
+      }
+    }, 500);
+  }
 
   mainWindow.on('closed', () => {
     mainWindow = null;
